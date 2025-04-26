@@ -1,6 +1,7 @@
-# from django.contrib import admin
-# from django.urls import path, include
+from django.contrib import admin
+from django.urls import path, include
+from .views import OfferView
 
-# urlpatterns = [
-# 	path('registration/', )
-# ]
+urlpatterns = [
+	path('offers/', OfferView.as_view())
+]
