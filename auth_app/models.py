@@ -15,12 +15,10 @@ class UserProfile(models.Model):
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
 	email = models.EmailField()
 
-class CustomerProfile(models.Model):
-	user_profile = models.OneToOneField(UserProfile, related_name="customer_profile", on_delete=models.CASCADE)
+class CustomerProfile(UserProfile):
 	uploaded_at = models.DateTimeField(auto_now_add=True)
 
-class BusinessProfile(models.Model):
-	user_profile = models.OneToOneField(UserProfile, related_name="business_profile", on_delete=models.CASCADE)
+class BusinessProfile(UserProfile):
 	location = models.CharField(max_length=255)
 	tel = models.CharField(max_length=255)
 	description = models.TextField()
