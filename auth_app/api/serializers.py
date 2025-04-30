@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import UserProf, Profile, BusinessProfile
+from ..models import UserProf, Profile, BusinessProfile, CustomerProfile
 from django.contrib.auth.models import User
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -43,3 +43,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessProfile
         fields = ['username', 'email', 'password', 'repeated_password', 'type']
+
+class BusinessProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessProfile
+        fields = '__all__'
+
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerProfile
+        fields = '__all__'

@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework import viewsets
+from ..models import Order
+from .serializers import OrderSerializer
+from rest_framework.permissions import AllowAny
 
 # Create your views here.
 class OfferViewset(viewsets.ModelViewSet):
@@ -10,7 +13,9 @@ class OfferDetailView(generics.RetrieveUpdateDestroyAPIView):
 	pass
 
 class OrderViewset(viewsets.ModelViewSet):
-	pass
+	queryset = Order.objects.all()
+	serializer_class = OrderSerializer
+	permission_classes = [AllowAny]
 
 class OrderCountView(generics.ListAPIView):
 	pass

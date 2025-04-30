@@ -1,14 +1,9 @@
 from rest_framework import serializers
-from coderr_app.models import Offer, OfferOption, Order, Review
+from coderr_app.models import Offer, Order, Review
 
 class OfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offer
-        fields = '__all__'
-
-class OfferOptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OfferOption
         fields = '__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
