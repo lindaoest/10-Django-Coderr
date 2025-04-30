@@ -6,11 +6,11 @@ TYPECHOICES = [
 	("customer", "Customer")
 ]
 
-class User(models.Model):
-	user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE)
+class UserProf(models.Model):
+	user = models.OneToOneField(User, related_name="userProfile", on_delete=models.CASCADE)
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
 
-class UserProfile(models.Model):
+class Profile(models.Model):
 	user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE)
 	username = models.CharField(max_length=150)
 	first_name = models.CharField(max_length=30)
@@ -19,10 +19,10 @@ class UserProfile(models.Model):
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
 	email = models.EmailField()
 
-class CustomerProfile(UserProfile):
+class CustomerProfile(Profile):
 	uploaded_at = models.DateTimeField(auto_now_add=True)
 
-class BusinessProfile(UserProfile):
+class BusinessProfile(Profile):
 	location = models.CharField(max_length=255)
 	tel = models.CharField(max_length=255)
 	description = models.TextField()

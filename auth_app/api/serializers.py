@@ -1,19 +1,17 @@
 from rest_framework import serializers
-from ..models import User
+from ..models import UserProf, Profile, BusinessProfile
+from django.contrib.auth.models import User
 
 class RegistrationSerializer(serializers.ModelSerializer):
 
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
     repeated_password = serializers.CharField(write_only=True)
-    type = serializers.CharField()
 
     class Meta:
-        model = User
+        model = UserProf
         fields = ['username', 'email', 'password', 'repeated_password', 'type']
-        extra_kwargs = {
-            'password': {
-                'write_only': True
-            }
-        }
 
     def validate(self, data):
         pw = data['password']
@@ -29,7 +27,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def save(self):
-        account = User(username=self.validated_data['username'], email=self.validated_data['email'], type=self.validated_data['type'])
-        account.set_password(self.validated_data['password'])
+        user = User(username=self.validated_data['username'], email=self.validated_data['email'])
+        user.set_password(self.validated_data['password'])
+        user.save()
+        account = UserProf(user=user, type=self.validated_data['type'])
         account.save()
         return account
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    repeated_password = serializers.CharField(write_only=True)
+    class Meta:
+        model = BusinessProfile
+        fields = ['username', 'email', 'password', 'repeated_password', 'type']
