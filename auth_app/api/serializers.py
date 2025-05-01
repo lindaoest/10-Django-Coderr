@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import UserProf, Profile, BusinessProfile, CustomerProfile
+from ..models import UserProfile, BusinessProfile, CustomerProfile
 from django.contrib.auth.models import User
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -10,7 +10,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     repeated_password = serializers.CharField(write_only=True)
 
     class Meta:
-        model = UserProf
+        model = UserProfile
         fields = ['username', 'email', 'password', 'repeated_password', 'type']
 
     def validate(self, data):
@@ -30,19 +30,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user = User(username=self.validated_data['username'], email=self.validated_data['email'])
         user.set_password(self.validated_data['password'])
         user.save()
-        account = UserProf(user=user, type=self.validated_data['type'])
+        account = UserProfile(user=user, type=self.validated_data['type'])
         account.save()
+
+        if self.validated_data['type'] == 'customer':
+            customer = CustomerProfile(user=user, type=self.validated_data['type'], username=self.validated_data['username'], email=self.validated_data['email'])
+            customer.save()
+
+        if self.validated_data['type'] == 'business':
+            business = BusinessProfile(user=user, type=self.validated_data['type'], username=self.validated_data['username'], email=self.validated_data['email'])
+            business.save()
+
         return account
-
-class ProfileSerializer(serializers.ModelSerializer):
-
-    username = serializers.CharField(required=True)
-    email = serializers.EmailField(required=True)
-    password = serializers.CharField(write_only=True, required=True)
-    repeated_password = serializers.CharField(write_only=True)
-    class Meta:
-        model = BusinessProfile
-        fields = ['username', 'email', 'password', 'repeated_password', 'type']
 
 class BusinessProfileSerializer(serializers.ModelSerializer):
     class Meta:

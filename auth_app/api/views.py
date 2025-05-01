@@ -3,10 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from .serializers import RegistrationSerializer, ProfileSerializer, BusinessProfileSerializer, CustomerProfileSerializer
+from .serializers import RegistrationSerializer, BusinessProfileSerializer, CustomerProfileSerializer
 from rest_framework import status
-from ..models import BusinessProfile, CustomerProfile
-from django.contrib.auth.models import User
+from ..models import BusinessProfile, CustomerProfile, UserProfile
 from rest_framework.authtoken.views import ObtainAuthToken
 
 class RegistrationView(APIView):
@@ -47,10 +46,35 @@ class LoginView(ObtainAuthToken):
 
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ProfileView(generics.RetrieveUpdateDestroyAPIView):
-	queryset = User.objects.all()
-	serializer_class = ProfileSerializer
+class ProfileDetailView(APIView):
 	permission_classes = [AllowAny]
+
+	def get(self, request, pk):
+		user = UserProfile.objects.get(user_id=pk)
+
+		if user.type == 'business':
+			userBusiness = BusinessProfile.objects.get(user_id=pk)
+			serializer = BusinessProfileSerializer(userBusiness)
+		else :
+			userCustomer = CustomerProfile.objects.get(user_id=pk)
+			serializer = CustomerProfileSerializer(userCustomer)
+
+		return Response(serializer.data)
+
+	def patch(self, request, pk):
+		user = UserProfile.objects.get(user_id=pk)
+
+		if user.type == 'business':
+			userBusiness = BusinessProfile.objects.get(user_id=pk)
+			serializer = BusinessProfileSerializer(userBusiness, data=request.data, partial=True)
+		else :
+			userCustomer = CustomerProfile.objects.get(user_id=pk)
+			serializer = CustomerProfileSerializer(userCustomer, data=request.data, partial=True)
+
+		if serializer.is_valid():
+			user = serializer.save()
+			return Response(serializer.data)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProfileBusinessView(generics.ListCreateAPIView):
 	queryset = BusinessProfile.objects.all()
