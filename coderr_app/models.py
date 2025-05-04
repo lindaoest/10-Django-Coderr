@@ -1,5 +1,6 @@
 from django.db import models
 from auth_app.models import CustomerProfile, BusinessProfile
+from django.contrib.auth.models import User
 
 STATUS_CHOICES = [
     ('in_progress', 'In Bearbeitung'),
@@ -14,14 +15,17 @@ TYPECHOICES = [
 ]
 
 class Offer(models.Model):
-	user = models.ForeignKey(BusinessProfile, related_name='offers', on_delete=models.CASCADE)
+	user = models.ForeignKey(User, related_name='offers', on_delete=models.CASCADE)
 	title = models.CharField(max_length=255)
 	image = models.FileField(upload_to='offers/', null=True)
 	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now_add=True)
-	min_price = models.DecimalField(max_digits=8, decimal_places=2)
-	min_delivery_time = models.IntegerField()
+	# min_price = models.DecimalField(max_digits=8, decimal_places=2)
+	# min_delivery_time = models.IntegerField()
+
+	def __str__(self):
+		return f"{self.title} (ID: {self.id})"
 
 class OfferDetail(models.Model):
 	title = models.CharField(max_length=255)
@@ -30,8 +34,8 @@ class OfferDetail(models.Model):
 	price = models.DecimalField(max_digits=8, decimal_places=2)
 	features = models.JSONField()
 	offer_type = models.CharField(choices=TYPECHOICES, default='basic')
-	# list = models.TextField()
 	offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
+	# list = models.TextField()
 
 class Order(models.Model):
 	customer_user = models.ForeignKey(CustomerProfile, related_name='orders', on_delete=models.CASCADE)
@@ -49,8 +53,8 @@ class Order(models.Model):
 	updated_at = models.DateTimeField(auto_now_add=True)
 	# offer_detail_id = models.ForeignKey(Offer, related_name='orders', on_delete=models.CASCADE)
 
-class OrderCount(models.Model):
-	order_count = models.IntegerField()
+	def __str__(self):
+		return {self.title}
 
 class CompletedOrderCount(models.Model):
 	completed_order_count = models.IntegerField()

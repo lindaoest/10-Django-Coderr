@@ -10,7 +10,7 @@ router.register(r'reviews', ReviewViewset, basename='review')
 
 urlpatterns = [
 	path('', include(router.urls)),
-	path('offerdetails/<int:id>/', OfferDetailView.as_view()),
+	path('offerdetails/<int:pk>/', OfferDetailView.as_view()),
 	path('order-count/<int:business_user_id>/', OrderCountView.as_view()),
 	path('completed-order-count/<int:business_user_id>/', CompletedOrderCount.as_view()),
 	path('base-info/', BaseInfoView.as_view()),

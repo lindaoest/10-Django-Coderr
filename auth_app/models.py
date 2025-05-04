@@ -29,7 +29,7 @@ class CustomerProfile(models.Model):
 
 class BusinessProfile(models.Model):
 	user = models.OneToOneField(User, related_name="businessProfile", on_delete=models.CASCADE)
-	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
+	type = models.CharField(max_length=50, choices=TYPECHOICES, default='business')
 	username = models.CharField(max_length=150, blank=True)
 	first_name = models.CharField(max_length=30, blank=True)
 	last_name = models.CharField(max_length=30, blank=True)
