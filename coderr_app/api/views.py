@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from rest_framework import generics
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from ..models import Order, Offer, Review, BaseInfo, OfferDetail
 from auth_app.models import BusinessProfile
-from .serializers import OrderSerializer, OfferSerializer, OfferDetailSerializer, ReviewSerializer, BaseInfoSerializer
+from .serializers import OrderSerializer, OrderPostSerializer, OfferSerializer, OfferDetailSerializer, ReviewSerializer, BaseInfoSerializer
 from rest_framework.permissions import AllowAny
 from .pagination import OfferPagination
 from rest_framework.views import APIView
@@ -28,6 +28,14 @@ class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
 	serializer_class = OrderSerializer
 	permission_classes = [AllowAny]
+
+	def create(self, request, *args, **kwargs):
+		serializer = OrderPostSerializer(data=request.data, context={'request': request})
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderCountView(APIView):
 	permission_classes = [AllowAny]
