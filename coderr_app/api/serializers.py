@@ -64,6 +64,12 @@ class OrderPostSerializer(serializers.ModelSerializer):
         )
         return order
 
+class OrderPutSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Order
+        fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
+
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review

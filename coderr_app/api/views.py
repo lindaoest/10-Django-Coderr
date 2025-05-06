@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework import viewsets, status
 from ..models import Order, Offer, Review, BaseInfo, OfferDetail
 from auth_app.models import BusinessProfile
-from .serializers import OrderSerializer, OrderPostSerializer, OfferSerializer, OfferDetailSerializer, ReviewSerializer, BaseInfoSerializer
+from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewSerializer, BaseInfoSerializer
 from rest_framework.permissions import AllowAny
 from .pagination import OfferPagination
 from rest_framework.views import APIView
@@ -29,6 +29,10 @@ class OrderViewset(viewsets.ModelViewSet):
 	serializer_class = OrderSerializer
 	permission_classes = [AllowAny]
 
+	def get_serializer_class(self):
+		if self.action == 'patch':
+			return OrderPutSerializer
+
 	def create(self, request, *args, **kwargs):
 		serializer = OrderPostSerializer(data=request.data, context={'request': request})
 		if serializer.is_valid():
@@ -42,16 +46,23 @@ class OrderCountView(APIView):
 
 	def get(self, request, business_user_id):
 		orders = 0
-		user = BusinessProfile.objects.get(user_id=business_user_id)
-		orders = user.orders.count()
+		order = Order.objects.filter(business_user_id=business_user_id)
+		allOrders = order.count()
 
 		return Response({
-			'order_count': orders
+			'order_count': allOrders
 		})
 
 
-class CompletedOrderCount(generics.ListAPIView):
-	pass
+class CompletedOrderCount(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request, business_user_id):
+		order = Order.objects.filter(business_user_id=business_user_id,status='completed')
+		completedOrder = order.count()
+		return Response({
+			'completed_order_count': completedOrder
+		})
 
 class ReviewViewset(viewsets.ModelViewSet):
 	queryset = Review.objects.all()
