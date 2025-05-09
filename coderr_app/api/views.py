@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import generics
 from rest_framework import viewsets, status
 from ..models import Order, Offer, Review, BaseInfo, OfferDetail
-from auth_app.models import BusinessProfile
-from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewSerializer, BaseInfoSerializer
+from auth_app.models import BusinessProfile, CustomerProfile
+from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer, BaseInfoSerializer
 from rest_framework.permissions import AllowAny
 from .pagination import OfferPagination
 from rest_framework.views import APIView
@@ -26,11 +26,12 @@ class OfferDetailView(generics.RetrieveAPIView):
 
 class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
-	serializer_class = OrderSerializer
 	permission_classes = [AllowAny]
 
 	def get_serializer_class(self):
-		if self.action == 'patch':
+		if self.action == 'list':
+			return OrderSerializer
+		if self.action == 'partial_update':
 			return OrderPutSerializer
 
 	def create(self, request, *args, **kwargs):
@@ -66,8 +67,22 @@ class CompletedOrderCount(APIView):
 
 class ReviewViewset(viewsets.ModelViewSet):
 	queryset = Review.objects.all()
-	serializer_class = ReviewSerializer
 	permission_classes = [AllowAny]
+
+	def get_serializer_class(self):
+		print('test', self.action)
+		if self.action == 'list':
+			return ReviewReadSerializer
+		if self.action == 'create':
+			return ReviewCreateSerializer
+		if self.action == 'partial_update':
+			return ReviewUpdateSerializer
+
+	def perform_create(self, serializer):
+		customerprofile = CustomerProfile.objects.get(user_id=self.request.user.id)
+		print(self.request.user.id)
+		print(customerprofile)
+		serializer.save(reviewer=customerprofile)
 
 class BaseInfoView(generics.ListAPIView):
 	queryset = BaseInfo.objects.all()

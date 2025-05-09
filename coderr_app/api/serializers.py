@@ -2,21 +2,32 @@ from rest_framework import serializers
 from coderr_app.models import Offer, OfferDetail, Order, Review, BaseInfo
 from auth_app.models import BusinessProfile, CustomerProfile
 class OfferDetailSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = OfferDetail
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
         # read_only_fields = ['user']
 
+class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = OfferDetail
+        fields = ['id', 'url']
+        extra_kwargs = {
+            'url': {'view_name': 'offer-detail', 'lookup_field': 'pk'}
+        }
+
 class OfferSerializer(serializers.ModelSerializer):
 
     user = serializers.PrimaryKeyRelatedField(read_only=True)
-    details = OfferDetailSerializer(many=True)
+    # details = serializers.HyperlinkedRelatedField(many=True, view_name='offer-detail', read_only=True)
+    details = OfferDetailHyperlinkedSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
 
     class Meta:
         model = Offer
-        fields = ['id', 'title', 'description', 'details', 'min_price', 'min_delivery_time', 'user']
+        fields = ['id', 'title', 'description', 'image', 'details', 'min_price', 'min_delivery_time', 'user', 'created_at', 'updated_at']
         read_only_fields = ['user']
 
     def get_min_price(self, obj):
@@ -70,10 +81,22 @@ class OrderPutSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
 
-class ReviewSerializer(serializers.ModelSerializer):
+class ReviewReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = '__all__'
+        fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+
+class ReviewCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['reviewer']
+
+class ReviewUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+        read_only_fields = ['business_user', 'reviewer']
 
 class BaseInfoSerializer(serializers.ModelSerializer):
     class Meta:

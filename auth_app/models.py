@@ -27,6 +27,9 @@ class CustomerProfile(models.Model):
 	email = models.EmailField()
 	uploaded_at = models.DateTimeField(auto_now_add=True)
 
+	def __str__(self):
+		return self.username
+
 class BusinessProfile(models.Model):
 	user = models.OneToOneField(User, related_name="businessProfile", on_delete=models.CASCADE)
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='business')
