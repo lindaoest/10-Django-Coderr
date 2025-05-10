@@ -28,10 +28,22 @@ class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
 	permission_classes = [AllowAny]
 
+	def get_queryset(self):
+		if hasattr(self.request.user, 'customerProfile'):
+			user = CustomerProfile.objects.get(user_id=self.request.user.id)
+			orders = Order.objects.filter(customer_user_id=user)
+		elif hasattr(self.request.user, 'businessProfile'):
+			user = BusinessProfile.objects.get(user_id=self.request.user.id)
+			orders = Order.objects.filter(business_user_id=user)
+
+		return orders
+
 	def get_serializer_class(self):
-		if self.action == 'list':
+		if self.action == 'list' or 'retrieve':
 			return OrderSerializer
-		if self.action == 'partial_update':
+		if self.action == 'create':
+			return OrderPostSerializer
+		if self.action == 'partial_update' or 'update':
 			return OrderPutSerializer
 
 	def create(self, request, *args, **kwargs):
@@ -46,7 +58,6 @@ class OrderCountView(APIView):
 	permission_classes = [AllowAny]
 
 	def get(self, request, business_user_id):
-		orders = 0
 		order = Order.objects.filter(business_user_id=business_user_id)
 		allOrders = order.count()
 

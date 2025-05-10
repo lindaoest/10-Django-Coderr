@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from coderr_app.models import Offer, OfferDetail, Order, Review, BaseInfo
 from auth_app.models import BusinessProfile, CustomerProfile
+
 class OfferDetailSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
 
@@ -19,7 +20,6 @@ class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 class OfferSerializer(serializers.ModelSerializer):
-
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     details = OfferDetailSerializer(many=True, write_only=True)
     details_read = OfferDetailHyperlinkedSerializer(many=True, source='details', read_only=True)
@@ -61,8 +61,6 @@ class OfferSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         details_data = validated_data.pop('details', None)
 
-        print('teest', validated_data)
-
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
         instance.image = validated_data.get('image', instance.image)
@@ -90,7 +88,7 @@ class OrderPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'offer_detail_id']
+        fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'offer_detail_id', 'created_at', 'updated_at']
         read_only_fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
 
     def create(self, validated_data):
@@ -116,7 +114,7 @@ class OrderPutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
+        fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
 class ReviewReadSerializer(serializers.ModelSerializer):
     class Meta:
