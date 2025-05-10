@@ -127,6 +127,12 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         read_only_fields = ['reviewer']
 
+    def create(self, validated_data):
+        print('uuser', validated_data['business_user'])
+        user = BusinessProfile.objects.get(user_id=validated_data['business_user'])
+        review = Review.objects.create(business_user_id=user, **validated_data)
+        return review
+
 class ReviewUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
