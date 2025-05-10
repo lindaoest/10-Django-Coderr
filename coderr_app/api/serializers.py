@@ -2,6 +2,7 @@ from rest_framework import serializers
 from coderr_app.models import Offer, OfferDetail, Order, Review, BaseInfo
 from auth_app.models import BusinessProfile, CustomerProfile
 class OfferDetailSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = OfferDetail
@@ -20,15 +21,29 @@ class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
 class OfferSerializer(serializers.ModelSerializer):
 
     user = serializers.PrimaryKeyRelatedField(read_only=True)
-    # details = serializers.HyperlinkedRelatedField(many=True, view_name='offer-detail', read_only=True)
-    details = OfferDetailHyperlinkedSerializer(many=True, read_only=True)
+    details = OfferDetailSerializer(many=True, write_only=True)
+    details_read = OfferDetailHyperlinkedSerializer(many=True, source='details', read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
+    user_details = serializers.SerializerMethodField()
+
+    def get_user_details(self, obj):
+        user = BusinessProfile.objects.get(user=obj.user)
+        return {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'username': user.username
+        }
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['details'] = rep.pop('details_read', None)
+        return rep
 
     class Meta:
         model = Offer
-        fields = ['id', 'title', 'description', 'image', 'details', 'min_price', 'min_delivery_time', 'user', 'created_at', 'updated_at']
-        read_only_fields = ['user']
+        fields = ['id', 'title', 'description', 'image', 'details', 'details_read', 'min_price', 'min_delivery_time', 'user', 'user_details', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'details_read', 'user_details']
 
     def get_min_price(self, obj):
         return obj.details.first().price
@@ -42,6 +57,28 @@ class OfferSerializer(serializers.ModelSerializer):
         for detail_data in details_data:
             OfferDetail.objects.create(offer=offer, **detail_data)
         return offer
+
+    def update(self, instance, validated_data):
+        details_data = validated_data.pop('details', None)
+
+        print('teest', validated_data)
+
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+
+        for detail_data in details_data:
+            detail = OfferDetail.objects.get(pk=detail_data['id'])
+            detail.title = detail_data.get('title', detail.title)
+            detail.revisions = detail_data.get('revisions', detail.revisions)
+            detail.delivery_time_in_days = detail_data.get('delivery_time_in_days', detail.delivery_time_in_days)
+            detail.price = detail_data.get('price', detail.price)
+            detail.features = detail_data.get('features', detail.features)
+            detail.save()
+
+        return instance
+
 
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
