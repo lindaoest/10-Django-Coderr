@@ -5,17 +5,39 @@ from ..models import Order, Offer, Review, BaseInfo, OfferDetail
 from auth_app.models import BusinessProfile, CustomerProfile
 from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer, BaseInfoSerializer
 from rest_framework.permissions import AllowAny
+from .permissions import ReviewPermission
 from .pagination import OfferPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Avg
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
-# Create your views here.
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
 	serializer_class = OfferSerializer
 	permission_classes = [AllowAny]
 	pagination_class = OfferPagination
+	filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+	search_fields = ['title', 'description']
+	ordering_fields = ['updated_at', 'min_price']
+
+	def get_queryset(self):
+		queryset = Offer.objects.all()
+
+		max_delivery_time_param = self.request.query_params.get('max_delivery_time', None)
+
+		if max_delivery_time_param is not None:
+			if max_delivery_time_param:
+				queryset = queryset.filter(details__delivery_time_in_days__lte=max_delivery_time_param).distinct()
+
+		creator_id_param = self.request.query_params.get('creator_id', None)
+
+		if creator_id_param is not None:
+			if creator_id_param:
+				queryset = queryset.filter(user_id=creator_id_param)
+
+		return queryset
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
@@ -72,7 +94,6 @@ class OrderCountView(APIView):
 			'order_count': inProgressOrders
 		})
 
-
 class CompletedOrderCount(APIView):
 	permission_classes = [AllowAny]
 
@@ -85,7 +106,9 @@ class CompletedOrderCount(APIView):
 
 class ReviewViewset(viewsets.ModelViewSet):
 	queryset = Review.objects.all()
-	permission_classes = [AllowAny]
+	permission_classes = [ReviewPermission]
+	filter_backends = [filters.OrderingFilter]
+	ordering_fields = ['updated_at', 'rating']
 
 	def get_serializer_class(self):
 		if self.action == 'list':
@@ -95,7 +118,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 		if self.action == 'partial_update':
 			return ReviewUpdateSerializer
 
-	def perform_create(self, request, serializer):
+	def perform_create(self, serializer):
 		customerprofile = CustomerProfile.objects.get(user_id=self.request.user.id)
 		serializer.save(reviewer=customerprofile)
 

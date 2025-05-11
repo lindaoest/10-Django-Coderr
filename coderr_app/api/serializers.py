@@ -23,8 +23,6 @@ class OfferSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     details = OfferDetailSerializer(many=True, write_only=True)
     details_read = OfferDetailHyperlinkedSerializer(many=True, source='details', read_only=True)
-    min_price = serializers.SerializerMethodField()
-    min_delivery_time = serializers.SerializerMethodField()
     user_details = serializers.SerializerMethodField()
 
     def get_user_details(self, obj):
@@ -43,17 +41,19 @@ class OfferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offer
         fields = ['id', 'title', 'description', 'image', 'details', 'details_read', 'min_price', 'min_delivery_time', 'user', 'user_details', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'details_read', 'user_details']
+        read_only_fields = ['user', 'details_read', 'user_details', 'min_price', 'min_delivery_time']
 
-    def get_min_price(self, obj):
-        return obj.details.first().price
+    def get_min_price(self, details):
+        return details[0]['price']
 
-    def get_min_delivery_time(self, obj):
-        return obj.details.first().delivery_time_in_days
+    def get_min_delivery_time(self, details):
+        return details[0]['delivery_time_in_days']
 
     def create(self, validated_data):
         details_data = validated_data.pop('details')
-        offer = Offer.objects.create(**validated_data)
+        min_price = self.get_min_price(details_data)
+        min_delivery_time = self.get_min_delivery_time(details_data)
+        offer = Offer.objects.create(min_price=min_price, min_delivery_time=min_delivery_time, **validated_data)
         for detail_data in details_data:
             OfferDetail.objects.create(offer=offer, **detail_data)
         return offer
@@ -128,9 +128,8 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['reviewer']
 
     def create(self, validated_data):
-        print('uuser', validated_data['business_user'])
-        user = BusinessProfile.objects.get(user_id=validated_data['business_user'])
-        review = Review.objects.create(business_user_id=user, **validated_data)
+        user = BusinessProfile.objects.get(user_id=validated_data['business_user'].id)
+        review = Review.objects.create(business_user_id=user.id, **validated_data)
         return review
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
