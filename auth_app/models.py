@@ -10,13 +10,6 @@ class UserProfile(models.Model):
 	user = models.OneToOneField(User, related_name="userProfile", on_delete=models.CASCADE)
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
 
-# class Profile(UserProfile):
-# 	username = models.CharField(max_length=150)
-# 	first_name = models.CharField(max_length=30)
-# 	last_name = models.CharField(max_length=30)
-# 	file = models.FileField(upload_to='profile_pictures/', null=True, blank=True)
-# 	email = models.EmailField()
-
 class CustomerProfile(models.Model):
 	user = models.OneToOneField(User, related_name="customerProfile", on_delete=models.CASCADE)
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')

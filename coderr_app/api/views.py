@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework import viewsets, status
-from ..models import Order, Offer, Review, BaseInfo, OfferDetail
+from ..models import Order, Offer, Review, OfferDetail
 from auth_app.models import BusinessProfile, CustomerProfile
-from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer, BaseInfoSerializer
+from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
 from rest_framework.permissions import AllowAny
 from .permissions import ReviewPermission
 from .pagination import OfferPagination
@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from django.db.models import Avg
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth.models import User
 
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
@@ -42,12 +43,6 @@ class OfferViewset(viewsets.ModelViewSet):
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 
-	# def get_queryset(self):
-	# 	if hasattr(self.request.user, 'businessProfile'):
-	# 		offers = Offer.objects.filter(user_id=self.request.user)
-
-	# 	return offers
-
 class OfferDetailView(generics.RetrieveAPIView):
 	queryset = OfferDetail.objects.all()
 	serializer_class = OfferDetailSerializer
@@ -59,10 +54,10 @@ class OrderViewset(viewsets.ModelViewSet):
 
 	def get_queryset(self):
 		if hasattr(self.request.user, 'customerProfile'):
-			user = CustomerProfile.objects.get(user_id=self.request.user.id)
+			user = User.objects.get(pk=self.request.user.id)
 			orders = Order.objects.filter(customer_user_id=user)
 		elif hasattr(self.request.user, 'businessProfile'):
-			user = BusinessProfile.objects.get(user_id=self.request.user.id)
+			user = User.objects.get(pk=self.request.user.id)
 			orders = Order.objects.filter(business_user_id=user)
 
 		return orders
@@ -110,6 +105,23 @@ class ReviewViewset(viewsets.ModelViewSet):
 	filter_backends = [filters.OrderingFilter]
 	ordering_fields = ['updated_at', 'rating']
 
+	def get_queryset(self):
+		queryset = Review.objects.all()
+
+		business_user_id = self.request.query_params.get('business_user_id', None)
+
+		if business_user_id is not None:
+			if business_user_id:
+				queryset = queryset.filter(business_user_id=business_user_id)
+
+		reviewer_id = self.request.query_params.get('reviewer_id', None)
+
+		if reviewer_id is not None:
+			if reviewer_id:
+				queryset = queryset.filter(reviewer_id=reviewer_id)
+
+		return queryset
+
 	def get_serializer_class(self):
 		if self.action == 'list':
 			return ReviewReadSerializer
@@ -119,7 +131,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 			return ReviewUpdateSerializer
 
 	def perform_create(self, serializer):
-		customerprofile = CustomerProfile.objects.get(user_id=self.request.user.id)
+		customerprofile = User.objects.get(pk=self.request.user.id)
 		serializer.save(reviewer=customerprofile)
 
 class BaseInfoView(APIView):

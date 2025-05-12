@@ -1,5 +1,4 @@
 from django.db import models
-from auth_app.models import CustomerProfile, BusinessProfile
 from django.contrib.auth.models import User
 
 STATUS_CHOICES = [
@@ -37,8 +36,8 @@ class OfferDetail(models.Model):
 	offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
 
 class Order(models.Model):
-	customer_user = models.ForeignKey(CustomerProfile, related_name='orders', on_delete=models.CASCADE)
-	business_user = models.ForeignKey(BusinessProfile, related_name='orders', on_delete=models.CASCADE)
+	customer_user = models.ForeignKey(User, related_name='orders_customer_user', on_delete=models.CASCADE)
+	business_user = models.ForeignKey(User, related_name='orders_business_user', on_delete=models.CASCADE)
 	title = models.CharField(max_length=255)
 	revisions = models.IntegerField()
 	delivery_time_in_days = models.IntegerField()
@@ -52,21 +51,10 @@ class Order(models.Model):
 	def __str__(self):
 		return {self.title}
 
-class CompletedOrderCount(models.Model):
-	completed_order_count = models.IntegerField()
-
 class Review(models.Model):
-	business_user = models.ForeignKey(BusinessProfile, related_name='reviews', on_delete=models.CASCADE)
-	reviewer = models.ForeignKey(CustomerProfile, related_name='reviews', on_delete=models.CASCADE)
+	business_user = models.ForeignKey(User, related_name='reviews_business_user', on_delete=models.CASCADE)
+	reviewer = models.ForeignKey(User, related_name='reviews_reviewer', on_delete=models.CASCADE)
 	rating = models.DecimalField(max_digits=8, decimal_places=2)
 	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
-	# offer = models.ForeignKey(Offer, related_name='reviews', on_delete=models.CASCADE)
-
-class BaseInfo(models.Model):
-	review_count = models.IntegerField()
-	average_rating = models.DecimalField(max_digits=3, decimal_places=2)
-	business_profile_count = models.IntegerField()
-	offer_count = models.IntegerField()
-
