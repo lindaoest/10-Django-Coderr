@@ -5,7 +5,7 @@ from ..models import Order, Offer, Review, OfferDetail
 from auth_app.models import BusinessProfile, CustomerProfile
 from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
 from rest_framework.permissions import AllowAny
-from .permissions import ReviewPermission
+from .permissions import ReviewPermission, OfferPermission, OrderPermission
 from .pagination import OfferPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,7 +17,7 @@ from django.contrib.auth.models import User
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
 	serializer_class = OfferSerializer
-	permission_classes = [AllowAny]
+	permission_classes = [OfferPermission]
 	pagination_class = OfferPagination
 	filter_backends = [filters.SearchFilter, filters.OrderingFilter]
 	search_fields = ['title', 'description']
@@ -50,7 +50,7 @@ class OfferDetailView(generics.RetrieveAPIView):
 
 class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
-	permission_classes = [AllowAny]
+	permission_classes = [OrderPermission]
 
 	def get_queryset(self):
 		if hasattr(self.request.user, 'customerProfile'):
@@ -135,6 +135,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 		serializer.save(reviewer=customerprofile)
 
 class BaseInfoView(APIView):
+	permission_classes = [AllowAny]
 
 	def get(self, request):
 		offers = Offer.objects.all()

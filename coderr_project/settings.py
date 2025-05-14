@@ -69,6 +69,11 @@ CORS_ALLOWED_ORIGINS = [
 
 ROOT_URLCONF = 'coderr_project.urls'
 
+import os
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

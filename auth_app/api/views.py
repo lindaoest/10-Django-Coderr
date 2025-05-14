@@ -7,6 +7,7 @@ from .serializers import RegistrationSerializer, BusinessProfileSerializer, Cust
 from rest_framework import status
 from ..models import BusinessProfile, CustomerProfile, UserProfile
 from rest_framework.authtoken.views import ObtainAuthToken
+from .permissions import ProfilePermission
 
 class RegistrationView(APIView):
 	permission_classes = [AllowAny]
@@ -47,7 +48,7 @@ class LoginView(ObtainAuthToken):
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProfileDetailView(APIView):
-	permission_classes = [AllowAny]
+	permission_classes = [ProfilePermission]
 
 	def get(self, request, pk):
 		user = UserProfile.objects.get(user_id=pk)
@@ -79,9 +80,7 @@ class ProfileDetailView(APIView):
 class ProfileBusinessView(generics.ListCreateAPIView):
 	queryset = BusinessProfile.objects.all()
 	serializer_class = BusinessProfileSerializer
-	permission_classes = [AllowAny]
 
 class ProfileCustomerView(generics.ListCreateAPIView):
 	queryset = CustomerProfile.objects.all()
 	serializer_class = CustomerProfileSerializer
-	permission_classes = [AllowAny]

@@ -19,6 +19,7 @@ class CustomerProfile(models.Model):
 	file = models.FileField(upload_to='profile_pictures/', null=True, blank=True)
 	email = models.EmailField()
 	uploaded_at = models.DateTimeField(auto_now_add=True)
+	created_at = models.DateTimeField(auto_now_add=True, null=True)
 
 	def __str__(self):
 		return self.username
