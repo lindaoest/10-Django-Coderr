@@ -66,22 +66,24 @@ class OfferSerializer(serializers.ModelSerializer):
         instance.image = validated_data.get('image', instance.image)
         instance.save()
 
-        for detail_data in details_data:
-            detail = OfferDetail.objects.get(pk=detail_data['id'])
-            detail.title = detail_data.get('title', detail.title)
-            detail.revisions = detail_data.get('revisions', detail.revisions)
-            detail.delivery_time_in_days = detail_data.get('delivery_time_in_days', detail.delivery_time_in_days)
-            detail.price = detail_data.get('price', detail.price)
-            detail.features = detail_data.get('features', detail.features)
-            detail.save()
+        if details_data:
+            for detail_data in details_data:
+                detail = OfferDetail.objects.get(pk=detail_data['id'])
+                detail.title = detail_data.get('title', detail.title)
+                detail.revisions = detail_data.get('revisions', detail.revisions)
+                detail.delivery_time_in_days = detail_data.get('delivery_time_in_days', detail.delivery_time_in_days)
+                detail.price = detail_data.get('price', detail.price)
+                detail.features = detail_data.get('features', detail.features)
+                detail.save()
 
         return instance
 
 
 class OrderSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
 class OrderPostSerializer(serializers.ModelSerializer):
     offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True)
@@ -117,11 +119,13 @@ class OrderPutSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
 class ReviewReadSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
@@ -133,6 +137,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         return review
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
