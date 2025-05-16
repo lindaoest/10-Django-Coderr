@@ -6,9 +6,9 @@ TYPECHOICES = [
 	("customer", "Customer")
 ]
 
-class UserProfile(models.Model):
-	user = models.OneToOneField(User, related_name="userProfile", on_delete=models.CASCADE)
-	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
+# class UserProfile(models.Model):
+# 	user = models.OneToOneField(User, related_name="userProfile", on_delete=models.CASCADE)
+# 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
 
 class CustomerProfile(models.Model):
 	user = models.OneToOneField(User, related_name="customerProfile", on_delete=models.CASCADE)

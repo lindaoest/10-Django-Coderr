@@ -1,18 +1,19 @@
 from rest_framework import serializers
-from ..models import UserProfile, BusinessProfile, CustomerProfile
+from ..models import BusinessProfile, CustomerProfile
 from django.contrib.auth.models import User
 
 class RegistrationSerializer(serializers.ModelSerializer):
-
     username = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
     repeated_password = serializers.CharField(write_only=True)
+    type = serializers.CharField()
 
     class Meta:
-        model = UserProfile
+        model = User
         fields = ['username', 'email', 'password', 'repeated_password', 'type']
 
+    # Verify that the provided password is correct
     def validate(self, data):
         pw = data['password']
         repeated_pw = data['repeated_password']
@@ -21,34 +22,33 @@ class RegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'error': 'Passwords do not match'})
         return data
 
+    # Check if the email already exists
     def validate_email(self, value):
         if User.objects.filter(email=value):
             raise serializers.ValidationError({'error': 'Email already exists'})
         return value
 
-    def save(self):
-        user = User(username=self.validated_data['username'], email=self.validated_data['email'])
-        user.set_password(self.validated_data['password'])
+    # Save User
+    def create(self, validated_data):
+        user = User(username=validated_data['username'], email=validated_data['email'])
+        user.set_password(validated_data['password'])
         user.save()
-        account = UserProfile(user=user, type=self.validated_data['type'])
-        account.save()
 
-        if self.validated_data['type'] == 'customer':
-            customer = CustomerProfile(user=user, type=self.validated_data['type'], username=self.validated_data['username'], email=self.validated_data['email'])
-            customer.save()
+        # Save the profile based on its type: 'customer' or 'business'
+        if validated_data['type'] == 'customer':
+            CustomerProfile.objects.create(user=user, type=validated_data['type'], username=validated_data['username'], email=validated_data['email'])
 
-        if self.validated_data['type'] == 'business':
-            business = BusinessProfile(user=user, type=self.validated_data['type'], username=self.validated_data['username'], email=self.validated_data['email'])
-            business.save()
+        if validated_data['type'] == 'business':
+            BusinessProfile.objects.create(user=user, type=validated_data['type'], username=validated_data['username'], email=validated_data['email'])
 
-        return account
+        return user
 
 class BusinessProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessProfile
-        fields = '__all__'
+        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'created_at', 'type']
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProfile
-        fields = '__all__'
+        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'uploaded_at', 'created_at', 'type']

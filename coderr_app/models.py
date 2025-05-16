@@ -35,6 +35,9 @@ class OfferDetail(models.Model):
 	offer_type = models.CharField(choices=TYPECHOICES, default='basic')
 	offer = models.ForeignKey(Offer, related_name='details', on_delete=models.CASCADE)
 
+	def __str__(self):
+		return f"{self.title} (ID: {self.id})"
+
 class Order(models.Model):
 	customer_user = models.ForeignKey(User, related_name='orders_customer_user', on_delete=models.CASCADE)
 	business_user = models.ForeignKey(User, related_name='orders_business_user', on_delete=models.CASCADE)
@@ -49,7 +52,7 @@ class Order(models.Model):
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return {self.title}
+		return f"{self.title} (ID: {self.id})"
 
 class Review(models.Model):
 	business_user = models.ForeignKey(User, related_name='reviews_business_user', on_delete=models.CASCADE)
@@ -58,3 +61,6 @@ class Review(models.Model):
 	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
+
+	def __str__(self):
+		return f"{self.description} (ID: {self.id})"
