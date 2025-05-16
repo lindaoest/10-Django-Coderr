@@ -6,10 +6,6 @@ TYPECHOICES = [
 	("customer", "Customer")
 ]
 
-# class UserProfile(models.Model):
-# 	user = models.OneToOneField(User, related_name="userProfile", on_delete=models.CASCADE)
-# 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
-
 class CustomerProfile(models.Model):
 	user = models.OneToOneField(User, related_name="customerProfile", on_delete=models.CASCADE)
 	type = models.CharField(max_length=50, choices=TYPECHOICES, default='customer')
@@ -20,6 +16,9 @@ class CustomerProfile(models.Model):
 	email = models.EmailField()
 	uploaded_at = models.DateTimeField(auto_now_add=True)
 	created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+	class Meta:
+		ordering = ["first_name"]
 
 	def __str__(self):
 		return self.username
@@ -37,3 +36,9 @@ class BusinessProfile(models.Model):
 	working_hours = models.CharField(max_length=255, blank=True)
 	email = models.EmailField()
 	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		ordering = ["first_name"]
+
+	def __str__(self):
+		return self.username

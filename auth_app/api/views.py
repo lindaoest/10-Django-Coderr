@@ -68,7 +68,7 @@ class ProfileDetailView(APIView):
 
 	# Handle individual PATCH request
 	def patch(self, request, pk):
-		user = User.objects.get(user=pk)
+		user = User.objects.get(pk=pk)
 
 		if hasattr(user, 'customerProfile'):
 			userCustomer = CustomerProfile.objects.get(user_id=pk)

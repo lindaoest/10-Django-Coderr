@@ -19,13 +19,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         repeated_pw = data['repeated_password']
 
         if pw != repeated_pw:
-            raise serializers.ValidationError({'error': 'Passwords do not match'})
+            raise serializers.ValidationError({'error': 'Passwörter stimmen nicht überein'})
         return data
 
     # Check if the email already exists
     def validate_email(self, value):
         if User.objects.filter(email=value):
-            raise serializers.ValidationError({'error': 'Email already exists'})
+            raise serializers.ValidationError({'error': 'Diese Email existiert bereits'})
         return value
 
     # Save User
@@ -46,9 +46,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class BusinessProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessProfile
-        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'description', 'working_hours', 'created_at', 'type']
+        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'email', 'description', 'working_hours', 'created_at', 'type']
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProfile
-        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'uploaded_at', 'created_at', 'type']
+        fields = ['user', 'username', 'first_name', 'last_name', 'file', 'email', 'uploaded_at', 'created_at', 'type']
