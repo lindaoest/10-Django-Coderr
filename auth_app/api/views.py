@@ -26,7 +26,7 @@ class RegistrationView(APIView):
 				'user_id': user.pk,
 				'email': user.email,
 				'username': user.username
-			})
+			}, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(ObtainAuthToken):
@@ -46,7 +46,7 @@ class LoginView(ObtainAuthToken):
 				'user_id': user.pk,
 				'email': user.email,
 				'username': user.username
-			})
+			}, status=status.HTTP_201_CREATED)
 
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
