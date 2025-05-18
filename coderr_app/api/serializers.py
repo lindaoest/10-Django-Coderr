@@ -3,13 +3,16 @@ from coderr_app.models import Offer, OfferDetail, Order, Review
 from auth_app.models import BusinessProfile
 from django.contrib.auth.models import User
 
+""" Serializer for individual offer details """
 class OfferDetailSerializer(serializers.ModelSerializer):
+    # Show 'id' at OfferCreateUpdateSerializer in field details
     id = serializers.IntegerField(required=False)
 
     class Meta:
         model = OfferDetail
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
 
+""" Serializer used for nested hyperlinked relationships """
 class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = OfferDetail
@@ -18,13 +21,13 @@ class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
             'url': {'view_name': 'offer-detail', 'lookup_field': 'pk'}
         }
 
-class OfferSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    details = OfferDetailSerializer(many=True, write_only=True)
-    details_read = OfferDetailHyperlinkedSerializer(many=True, source='details', read_only=True)
-    user_details = serializers.SerializerMethodField()
+""" Serializer for reading offers, including related details and user info """
+class OfferReadSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True) # Display user as a primary key (read-only)
+    details = OfferDetailHyperlinkedSerializer(many=True, read_only=True) # Include related offer details as hyperlinks (read-only)
+    user_details = serializers.SerializerMethodField() # Add a computed field for user details
 
-    # Create an object to display user details
+    # Return business profile information of the offer's creator
     def get_user_details(self, obj):
         user = BusinessProfile.objects.get(user=obj.user)
         return {
@@ -33,45 +36,49 @@ class OfferSerializer(serializers.ModelSerializer):
             'username': user.username
         }
 
-    # Replace 'details_read' with 'details' in the serialized representation
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['details'] = rep.pop('details_read', None)
-        return rep
+    class Meta:
+        model = Offer
+        fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_details']
+
+""" Serializer used for creating and updating offers with nested offer details """
+class OfferCreateUpdateSerializer(serializers.ModelSerializer):
+    details = OfferDetailSerializer(many=True) # Include offer details as nested input
+
+    # Extract the minimum price from the first detail item
+    def set_min_price(self, details):
+        return details[0]['price']
+
+    # Extract the minimum delivery time from the first detail item
+    def set_min_delivery_time(self, details):
+        return details[0]['delivery_time_in_days']
 
     class Meta:
         model = Offer
-        fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at', 'details', 'details_read', 'min_price', 'min_delivery_time', 'user_details']
-        read_only_fields = ['user', 'details_read', 'user_details', 'min_price', 'min_delivery_time']
+        fields = ['id', 'title', 'image', 'description', 'details']
 
-    # Get min price
-    def get_min_price(self, details):
-        return details[0]['price']
-
-    # Get min delivery time
-    def get_min_delivery_time(self, details):
-        return details[0]['delivery_time_in_days']
-
-    # Create Offer
+    # Handle offer creation, including nested detail objects
     def create(self, validated_data):
         details_data = validated_data.pop('details')
-        min_price = self.get_min_price(details_data)
-        min_delivery_time = self.get_min_delivery_time(details_data)
+        min_price = self.set_min_price(details_data)
+        min_delivery_time = self.set_min_delivery_time(details_data)
         offer = Offer.objects.create(min_price=min_price, min_delivery_time=min_delivery_time, **validated_data)
+
+        # Create associated OfferDetail instances
         for detail_data in details_data:
             OfferDetail.objects.create(offer=offer, **detail_data)
         return offer
 
-    # Update Offer
+    # Handle offer update including updates to nested details
     def update(self, instance, validated_data):
         details_data = validated_data.pop('details', None)
 
+        # Update offer fields
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
         instance.image = validated_data.get('image', instance.image)
         instance.save()
 
-        # Iterate over provided detail data and update the corresponding OfferDetail instances
+        # Update existing OfferDetail instances
         if details_data:
             for detail_data in details_data:
                 detail = OfferDetail.objects.get(pk=detail_data['id'])
@@ -84,27 +91,30 @@ class OfferSerializer(serializers.ModelSerializer):
 
         return instance
 
-
-class OrderSerializer(serializers.ModelSerializer):
+""" Serializer for reading order data """
+class OrderReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
-class OrderPostSerializer(serializers.ModelSerializer):
-    offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True)
+""" Serializer for creating orders (uses offer_detail_id to generate order fields) """
+class OrderCreateSerializer(serializers.ModelSerializer):
+    offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True) # Accept offer_detail_id as input to base the order on a specific OfferDetail
 
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'offer_detail_id', 'created_at', 'updated_at']
+        # These fields are automatically filled in and should not be user-editable
         read_only_fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
 
-    # Create Order with businessProfile & customerProfile
+    # Create order based on selected offer detail and the current user
     def create(self, validated_data):
         pk = validated_data.pop('offer_detail_id')
         offerDetail = OfferDetail.objects.get(pk=pk.id)
         businessProfile = User.objects.get(pk=offerDetail.offer.user.id)
         customerProfile = User.objects.get(pk=self.context['request'].user.id)
 
+        # Instantiate and return the new Order object
         order = Order.objects.create(
             business_user = businessProfile,
             customer_user = customerProfile,
@@ -118,28 +128,32 @@ class OrderPostSerializer(serializers.ModelSerializer):
         )
         return order
 
-class OrderPutSerializer(serializers.ModelSerializer):
+""" Serializer for updating orders """
+class OrderUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
+""" Serializer for reading reviews (used in GET requests) """
 class ReviewReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
 
+""" Serializer for creating reviews """
 class ReviewCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         read_only_fields = ['reviewer']
 
-    # Create Review
+    # Create review and assign reviewer automatically from the request context
     def create(self, validated_data):
         user = User.objects.get(pk=validated_data['business_user'].id)
         review = Review.objects.create(business_user_id=user.id, **validated_data)
         return review
 
+""" Serializer for updating reviews (business_user and reviewer are read-only) """
 class ReviewUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review

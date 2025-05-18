@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework import viewsets, status
 from ..models import Order, Offer, Review, OfferDetail
 from auth_app.models import BusinessProfile
-from .serializers import OrderSerializer, OrderPostSerializer, OrderPutSerializer, OfferSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
+from .serializers import OrderReadSerializer, OrderCreateSerializer, OrderUpdateSerializer, OfferReadSerializer, OfferCreateUpdateSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
 from rest_framework.permissions import AllowAny
 from .permissions import ReviewPermission, OfferPermission, OrderPermission
 from .pagination import OfferPagination
@@ -14,14 +14,20 @@ from django.contrib.auth.models import User
 
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
-	serializer_class = OfferSerializer
 	permission_classes = [OfferPermission]
 	pagination_class = OfferPagination
 	filter_backends = [filters.SearchFilter, filters.OrderingFilter]
 	search_fields = ['title', 'description']
 	ordering_fields = ['updated_at', 'min_price']
 
-	# Get query params max_delivery_time and creator_id from url and filter after that
+	# Return the appropriate serializer class depending on the HTTP method
+	def get_serializer_class(self):
+		if self.action in ['list', 'retrieve']:
+			return OfferReadSerializer
+		if self.action in ['create', 'partial_update', 'update']:
+			return OfferCreateUpdateSerializer
+
+	# Filter offers based on query parameters: max_delivery_time and creator_id
 	def get_queryset(self):
 		queryset = Offer.objects.all()
 
@@ -39,7 +45,7 @@ class OfferViewset(viewsets.ModelViewSet):
 
 		return queryset
 
-	# Set user who is logged in
+	# Set the current user as the creator of the offer
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 
@@ -52,8 +58,7 @@ class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
 	permission_classes = [OrderPermission]
 
-	# In the profile of the customer only show orders that he has ordered and
-	# in the profile of the business user only show orders that are sent to him
+	# Show orders based on user type (customer or business)
 	def get_queryset(self):
 		if hasattr(self.request.user, 'customerProfile'):
 			user = User.objects.get(pk=self.request.user.id)
@@ -64,17 +69,18 @@ class OrderViewset(viewsets.ModelViewSet):
 
 		return orders
 
-	# Assign specific serializers based on the HTTP method used
+	# Return the appropriate serializer class depending on the HTTP method
 	def get_serializer_class(self):
-		if self.action == 'list' or 'retrieve':
-			return OrderSerializer
+		if self.action in ['list', 'retrieve']:
+			return OrderReadSerializer
 		if self.action == 'create':
-			return OrderPostSerializer
-		if self.action == 'partial_update' or 'update':
-			return OrderPutSerializer
+			return OrderCreateSerializer
+		if self.action in ['partial_update', 'update']:
+			return OrderUpdateSerializer
 
+	# Handle the creation of a new order with proper validation
 	def create(self, request, *args, **kwargs):
-		serializer = OrderPostSerializer(data=request.data, context={'request': request})
+		serializer = OrderCreateSerializer(data=request.data, context={'request': request})
 		if serializer.is_valid():
 			serializer.save()
 			return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -82,11 +88,9 @@ class OrderViewset(viewsets.ModelViewSet):
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderCountView(APIView):
-	permission_classes = [AllowAny]
-
+	# Return the count of 'in_progress' orders for the given business user
 	def get(self, request, business_user_id):
-		# Filter orders by ID from the URL path and status 'in_progress'
-		orders = Order.objects.filter(business_user_id=business_user_id, status='in_progress')
+		orders = Order.objects.filter(business_user_id=business_user_id, status='in_progress') # Filter orders by ID from the URL path and status 'in_progress'
 		inProgressOrders = orders.count()
 
 		return Response({
@@ -94,11 +98,9 @@ class OrderCountView(APIView):
 		})
 
 class CompletedOrderCount(APIView):
-	permission_classes = [AllowAny]
-
+	# Return the count of 'completed' orders for the given business user
 	def get(self, request, business_user_id):
-		# Filter orders by ID from the URL path and status 'completed'
-		orders = Order.objects.filter(business_user_id=business_user_id, status='completed')
+		orders = Order.objects.filter(business_user_id=business_user_id, status='completed') # Filter orders by ID from the URL path and status 'completed'
 		completedOrder = orders.count()
 		return Response({
 			'completed_order_count': completedOrder
@@ -110,7 +112,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 	filter_backends = [filters.OrderingFilter]
 	ordering_fields = ['updated_at', 'rating']
 
-	# Get query params business_user_id and reviewer_id from url and filter after that
+	# Filter reviews based on business_user_id and reviewer_id query parameters
 	def get_queryset(self):
 		queryset = Review.objects.all()
 
@@ -128,7 +130,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 
 		return queryset
 
-	# Assign specific serializers based on the HTTP method used
+	# Return the appropriate serializer class depending on the HTTP method
 	def get_serializer_class(self):
 		if self.action == 'list':
 			return ReviewReadSerializer
@@ -137,7 +139,7 @@ class ReviewViewset(viewsets.ModelViewSet):
 		if self.action == 'partial_update':
 			return ReviewUpdateSerializer
 
-	# Set customer who is logged in
+	# Set the currently logged-in user as the reviewer
 	def perform_create(self, serializer):
 		customerprofile = User.objects.get(pk=self.request.user.id)
 		serializer.save(reviewer=customerprofile)
@@ -145,19 +147,19 @@ class ReviewViewset(viewsets.ModelViewSet):
 class BaseInfoView(APIView):
 	permission_classes = [AllowAny]
 
+	# Return general statistics about offers, reviews, and business profiles
 	def get(self, request):
 		offers = Offer.objects.all()
 		reviews = Review.objects.all()
 		business_profiles = BusinessProfile.objects.all()
 
-		# Calculate average rating
-		averageRatings = Review.objects.aggregate(Avg('rating', default=0))
+		averageRatings = Review.objects.aggregate(Avg('rating', default=0)) # Calculate average rating
 
 		data = {
-			'review_count': reviews.count(),
-			'average_rating': round(averageRatings['rating__avg'], 1),
-			'business_profile_count': business_profiles.count(),
-			'offer_count': offers.count()
+			'review_count': reviews.count(), # Count the total number of reviews in the database
+			'average_rating': round(averageRatings['rating__avg'], 1), # Calculate the average rating, rounded to one decimal place
+			'business_profile_count': business_profiles.count(), # Count the total number of business profiles
+			'offer_count': offers.count() # Count the total number of offers
 		}
 
 		return Response(data)
