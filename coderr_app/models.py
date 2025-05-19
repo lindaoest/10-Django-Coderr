@@ -57,7 +57,7 @@ class Order(models.Model):
 class Review(models.Model):
 	business_user = models.ForeignKey(User, related_name='reviews_business_user', on_delete=models.CASCADE)
 	reviewer = models.ForeignKey(User, related_name='reviews_reviewer', on_delete=models.CASCADE)
-	rating = models.DecimalField(max_digits=8, decimal_places=2)
+	rating = models.IntegerField()
 	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)

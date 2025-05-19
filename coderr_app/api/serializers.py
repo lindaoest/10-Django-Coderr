@@ -26,6 +26,8 @@ class OfferReadSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True) # Display user as a primary key (read-only)
     details = OfferDetailHyperlinkedSerializer(many=True, read_only=True) # Include related offer details as hyperlinks (read-only)
     user_details = serializers.SerializerMethodField() # Add a computed field for user details
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
 
     # Return business profile information of the offer's creator
     def get_user_details(self, obj):
@@ -93,6 +95,9 @@ class OfferCreateUpdateSerializer(serializers.ModelSerializer):
 
 """ Serializer for reading order data """
 class OrderReadSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
@@ -100,6 +105,8 @@ class OrderReadSerializer(serializers.ModelSerializer):
 """ Serializer for creating orders (uses offer_detail_id to generate order fields) """
 class OrderCreateSerializer(serializers.ModelSerializer):
     offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True) # Accept offer_detail_id as input to base the order on a specific OfferDetail
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
 
     class Meta:
         model = Order
@@ -130,22 +137,36 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 """ Serializer for updating orders """
 class OrderUpdateSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
 
 """ Serializer for reading reviews (used in GET requests) """
 class ReviewReadSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
 
 """ Serializer for creating reviews """
 class ReviewCreateSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         read_only_fields = ['reviewer']
+        extra_kwargs = {
+            'business_user': {'required': True},
+            'rating': {'required': True},
+            'description': {'required': True}
+        }
 
     # Create review and assign reviewer automatically from the request context
     def create(self, validated_data):
@@ -155,6 +176,9 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 """ Serializer for updating reviews (business_user and reviewer are read-only) """
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']

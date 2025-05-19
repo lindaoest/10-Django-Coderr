@@ -46,12 +46,17 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 """ Serializer for the BusinessProfile model """
 class BusinessProfileSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = BusinessProfile
         fields = ['user', 'username', 'first_name', 'last_name', 'file', 'location', 'tel', 'email', 'description', 'working_hours', 'created_at', 'type']
 
 """ Serializer for the CustomerProfile model """
 class CustomerProfileSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+    uploaded_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
+
     class Meta:
         model = CustomerProfile
         fields = ['user', 'username', 'first_name', 'last_name', 'file', 'email', 'uploaded_at', 'created_at', 'type']
