@@ -26,8 +26,6 @@ class OfferReadSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True) # Display user as a primary key (read-only)
     details = OfferDetailHyperlinkedSerializer(many=True, read_only=True) # Include related offer details as hyperlinks (read-only)
     user_details = serializers.SerializerMethodField() # Add a computed field for user details
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
 
     # Return business profile information of the offer's creator
     def get_user_details(self, obj):
@@ -41,6 +39,10 @@ class OfferReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offer
         fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_details']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }
 
 """ Serializer used for creating and updating offers with nested offer details """
 class OfferCreateUpdateSerializer(serializers.ModelSerializer):
@@ -83,7 +85,7 @@ class OfferCreateUpdateSerializer(serializers.ModelSerializer):
         # Update existing OfferDetail instances
         if details_data:
             for detail_data in details_data:
-                detail = OfferDetail.objects.get(pk=detail_data['id'])
+                detail = OfferDetail.objects.get(offer=instance.id, offer_type=detail_data['offer_type'])
                 detail.title = detail_data.get('title', detail.title)
                 detail.revisions = detail_data.get('revisions', detail.revisions)
                 detail.delivery_time_in_days = detail_data.get('delivery_time_in_days', detail.delivery_time_in_days)
@@ -95,24 +97,27 @@ class OfferCreateUpdateSerializer(serializers.ModelSerializer):
 
 """ Serializer for reading order data """
 class OrderReadSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }
 
 """ Serializer for creating orders (uses offer_detail_id to generate order fields) """
 class OrderCreateSerializer(serializers.ModelSerializer):
     offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True) # Accept offer_detail_id as input to base the order on a specific OfferDetail
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
 
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'offer_detail_id', 'created_at', 'updated_at']
         # These fields are automatically filled in and should not be user-editable
         read_only_fields = ['customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }
 
     # Create order based on selected offer detail and the current user
     def create(self, validated_data):
@@ -137,27 +142,26 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 """ Serializer for updating orders """
 class OrderUpdateSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-
     class Meta:
         model = Order
         fields = ['id', 'customer_user', 'business_user', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type', 'status', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }
 
 """ Serializer for reading reviews (used in GET requests) """
 class ReviewReadSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }
 
 """ Serializer for creating reviews """
 class ReviewCreateSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
@@ -165,7 +169,9 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'business_user': {'required': True},
             'rating': {'required': True},
-            'description': {'required': True}
+            'description': {'required': True},
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
         }
 
     # Create review and assign reviewer automatically from the request context
@@ -176,10 +182,11 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 """ Serializer for updating reviews (business_user and reviewer are read-only) """
 class ReviewUpdateSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-    updated_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ") # Add custom format for Datetime
-
     class Meta:
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         read_only_fields = ['business_user', 'reviewer']
+        extra_kwargs = {
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+        }

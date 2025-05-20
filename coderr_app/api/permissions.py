@@ -38,6 +38,10 @@ class OrderPermission(BasePermission):
         return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
+        # Safe methods require authenticated user
+        if request.method in SAFE_METHODS:
+            return request.user.is_authenticated
+
         # Update (PATCH, PUT) allowed only if user is business user of the order
         if request.method in ['PATCH', 'PUT']:
             return request.user.is_authenticated and request.user == obj.business_user
