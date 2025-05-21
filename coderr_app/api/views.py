@@ -11,6 +11,8 @@ from rest_framework.response import Response
 from django.db.models import Avg
 from rest_framework import filters
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ParseError
 
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
@@ -34,14 +36,35 @@ class OfferViewset(viewsets.ModelViewSet):
 		max_delivery_time_param = self.request.query_params.get('max_delivery_time', None)
 
 		if max_delivery_time_param is not None:
-			if max_delivery_time_param:
-				queryset = queryset.filter(details__delivery_time_in_days__lte=max_delivery_time_param).distinct()
+			try:
+				if max_delivery_time_param:
+					max_delivery_time_param = int(max_delivery_time_param)
+					queryset = queryset.filter(details__delivery_time_in_days__lte=max_delivery_time_param).distinct()
+
+			except (ValueError, TypeError):
+				raise ParseError("Parameter 'max_delivery_time' muss eine Ganzzahl sein.")
+
+		min_price_param = self.request.query_params.get('min_price', None)
+
+		if min_price_param is not None:
+			try:
+				if min_price_param:
+					min_price_param = int(min_price_param)
+					queryset = queryset.filter(min_price__gte=min_price_param).distinct()
+
+			except (ValueError, TypeError):
+				raise ParseError("Parameter 'min_price' muss eine Ganzzahl sein.")
 
 		creator_id_param = self.request.query_params.get('creator_id', None)
 
 		if creator_id_param is not None:
-			if creator_id_param:
-				queryset = queryset.filter(user_id=creator_id_param)
+			try:
+				if creator_id_param:
+					creator_id_param = int(creator_id_param)
+					queryset = queryset.filter(user_id=creator_id_param)
+
+			except (ValueError, TypeError):
+				raise ParseError("Parameter 'creator_id' muss eine Ganzzahl sein.")
 
 		return queryset
 
@@ -61,10 +84,10 @@ class OrderViewset(viewsets.ModelViewSet):
 	# Show orders based on user type (customer or business)
 	def get_queryset(self):
 		if hasattr(self.request.user, 'customerProfile'):
-			user = User.objects.get(pk=self.request.user.id)
+			user = get_object_or_404(User, pk=self.request.user.id)
 			orders = Order.objects.filter(customer_user_id=user)
 		elif hasattr(self.request.user, 'businessProfile'):
-			user = User.objects.get(pk=self.request.user.id)
+			user = get_object_or_404(User, pk=self.request.user.id)
 			orders = Order.objects.filter(business_user_id=user)
 
 		return orders
@@ -90,6 +113,8 @@ class OrderViewset(viewsets.ModelViewSet):
 class OrderCountView(APIView):
 	# Return the count of 'in_progress' orders for the given business user
 	def get(self, request, business_user_id):
+		get_object_or_404(User, pk=business_user_id)
+
 		orders = Order.objects.filter(business_user_id=business_user_id, status='in_progress') # Filter orders by ID from the URL path and status 'in_progress'
 		inProgressOrders = orders.count()
 
@@ -100,8 +125,11 @@ class OrderCountView(APIView):
 class CompletedOrderCount(APIView):
 	# Return the count of 'completed' orders for the given business user
 	def get(self, request, business_user_id):
+		get_object_or_404(User, pk=business_user_id)
+
 		orders = Order.objects.filter(business_user_id=business_user_id, status='completed') # Filter orders by ID from the URL path and status 'completed'
 		completedOrder = orders.count()
+
 		return Response({
 			'completed_order_count': completedOrder
 		})

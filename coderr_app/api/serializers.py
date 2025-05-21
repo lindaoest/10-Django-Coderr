@@ -2,6 +2,7 @@ from rest_framework import serializers
 from coderr_app.models import Offer, OfferDetail, Order, Review
 from auth_app.models import BusinessProfile
 from django.contrib.auth.models import User
+from rest_framework.exceptions import ParseError
 
 """ Serializer for individual offer details """
 class OfferDetailSerializer(serializers.ModelSerializer):
@@ -11,6 +12,14 @@ class OfferDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OfferDetail
         fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
+        extra_kwargs = {
+            'title' : {'required': True},
+            'revisions': {'required': True},
+            'delivery_time_in_days': {'required': True},
+            'price': {'required': True},
+            'features': {'required': True},
+            'offer_type': {'required': True},
+        }
 
 """ Serializer used for nested hyperlinked relationships """
 class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
@@ -85,7 +94,14 @@ class OfferCreateUpdateSerializer(serializers.ModelSerializer):
         # Update existing OfferDetail instances
         if details_data:
             for detail_data in details_data:
-                detail = OfferDetail.objects.get(offer=instance.id, offer_type=detail_data['offer_type'])
+                if 'offer_type' not in detail_data:
+                    raise ParseError("Jeder Eintrag in 'details' muss ein 'offer_type'-Feld enthalten.")
+
+                try:
+                    detail = OfferDetail.objects.get(offer=instance.id, offer_type=detail_data['offer_type'])
+                except OfferDetail.DoesNotExist:
+                    raise ParseError(f"Kein OfferDetail mit offer_type '{detail_data['offer_type']}' gefunden.")
+
                 detail.title = detail_data.get('title', detail.title)
                 detail.revisions = detail_data.get('revisions', detail.revisions)
                 detail.delivery_time_in_days = detail_data.get('delivery_time_in_days', detail.delivery_time_in_days)

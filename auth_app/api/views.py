@@ -9,6 +9,7 @@ from ..models import BusinessProfile, CustomerProfile
 from rest_framework.authtoken.views import ObtainAuthToken
 from .permissions import ProfilePermission
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 
 """ View for user registration - anyone can access """
 class RegistrationView(APIView):
@@ -63,7 +64,7 @@ class ProfileDetailView(APIView):
 	permission_classes = [ProfilePermission]
 
 	def get(self, request, pk):
-		user = User.objects.get(pk=pk)
+		user = get_object_or_404(User, pk=pk)
 
 		# Check if user has a CustomerProfile and serialize it
 		if hasattr(user, 'customerProfile'):
@@ -79,14 +80,18 @@ class ProfileDetailView(APIView):
 
 	# Handle individual PATCH request
 	def patch(self, request, pk):
-		user = User.objects.get(pk=pk)
+		user = get_object_or_404(User, pk=pk)
 
 		# Partial update: select serializer based on profile type
 		if hasattr(user, 'customerProfile'):
 			userCustomer = CustomerProfile.objects.get(user_id=pk)
+			# Check object-level permission
+			self.check_object_permissions(request, userCustomer)
 			serializer = CustomerProfileSerializer(userCustomer, data=request.data, partial=True)
 		else:
 			userBusiness = BusinessProfile.objects.get(user_id=pk)
+			# Check object-level permission
+			self.check_object_permissions(request, userBusiness)
 			serializer = BusinessProfileSerializer(userBusiness, data=request.data, partial=True)
 
 		# Validate and save changes
