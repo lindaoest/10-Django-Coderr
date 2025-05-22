@@ -1,18 +1,18 @@
 from rest_framework import generics
 from rest_framework import viewsets, status
-from ..models import Order, Offer, Review, OfferDetail
-from auth_app.models import BusinessProfile
-from .serializers import OrderReadSerializer, OrderCreateSerializer, OrderUpdateSerializer, OfferReadSerializer, OfferCreateUpdateSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
-from rest_framework.permissions import AllowAny
-from .permissions import ReviewPermission, OfferPermission, OrderPermission
-from .pagination import OfferPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Avg
+from rest_framework.permissions import AllowAny
 from rest_framework import filters
+from rest_framework.exceptions import ParseError
+from django.db.models import Avg
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ParseError
+from auth_app.models import BusinessProfile
+from ..models import Order, Offer, Review, OfferDetail
+from .serializers import OrderReadSerializer, OrderCreateSerializer, OrderUpdateSerializer, OfferReadSerializer, OfferCreateUpdateSerializer, OfferDetailSerializer, ReviewReadSerializer, ReviewCreateSerializer, ReviewUpdateSerializer
+from .permissions import ReviewPermission, OfferPermission, OrderPermission
+from .pagination import OfferPagination
 
 class OfferViewset(viewsets.ModelViewSet):
 	queryset = Offer.objects.all()
@@ -75,7 +75,6 @@ class OfferViewset(viewsets.ModelViewSet):
 class OfferDetailView(generics.RetrieveAPIView):
 	queryset = OfferDetail.objects.all()
 	serializer_class = OfferDetailSerializer
-	permission_classes = [AllowAny]
 
 class OrderViewset(viewsets.ModelViewSet):
 	queryset = Order.objects.all()
@@ -115,7 +114,8 @@ class OrderCountView(APIView):
 	def get(self, request, business_user_id):
 		get_object_or_404(User, pk=business_user_id)
 
-		orders = Order.objects.filter(business_user_id=business_user_id, status='in_progress') # Filter orders by ID from the URL path and status 'in_progress'
+		# Filter orders by ID from the URL path and status 'in_progress'
+		orders = Order.objects.filter(business_user_id=business_user_id, status='in_progress')
 		inProgressOrders = orders.count()
 
 		return Response({
@@ -127,7 +127,8 @@ class CompletedOrderCount(APIView):
 	def get(self, request, business_user_id):
 		get_object_or_404(User, pk=business_user_id)
 
-		orders = Order.objects.filter(business_user_id=business_user_id, status='completed') # Filter orders by ID from the URL path and status 'completed'
+		# Filter orders by ID from the URL path and status 'completed'
+		orders = Order.objects.filter(business_user_id=business_user_id, status='completed')
 		completedOrder = orders.count()
 
 		return Response({
@@ -147,14 +148,24 @@ class ReviewViewset(viewsets.ModelViewSet):
 		business_user_id = self.request.query_params.get('business_user_id', None)
 
 		if business_user_id is not None:
-			if business_user_id:
-				queryset = queryset.filter(business_user_id=business_user_id)
+			try:
+				if business_user_id:
+					business_user_id = int(business_user_id)
+					queryset = queryset.filter(business_user_id=business_user_id)
+
+			except (ValueError, TypeError):
+				raise ParseError("Parameter 'business_user_id' muss eine Ganzzahl sein.")
 
 		reviewer_id = self.request.query_params.get('reviewer_id', None)
 
 		if reviewer_id is not None:
-			if reviewer_id:
-				queryset = queryset.filter(reviewer_id=reviewer_id)
+			try:
+				if reviewer_id:
+					reviewer_id = int(reviewer_id)
+					queryset = queryset.filter(reviewer_id=reviewer_id)
+
+			except (ValueError, TypeError):
+				raise ParseError("Parameter 'reviewer_id' muss eine Ganzzahl sein.")
 
 		return queryset
 
@@ -181,13 +192,20 @@ class BaseInfoView(APIView):
 		reviews = Review.objects.all()
 		business_profiles = BusinessProfile.objects.all()
 
-		averageRatings = Review.objects.aggregate(Avg('rating', default=0)) # Calculate average rating
+		# Calculate average rating
+		averageRatings = Review.objects.aggregate(Avg('rating', default=0))
 
 		data = {
-			'review_count': reviews.count(), # Count the total number of reviews in the database
-			'average_rating': round(averageRatings['rating__avg'], 1), # Calculate the average rating, rounded to one decimal place
-			'business_profile_count': business_profiles.count(), # Count the total number of business profiles
-			'offer_count': offers.count() # Count the total number of offers
+			'review_count': reviews.count(),
+			'average_rating': round(averageRatings['rating__avg'], 1),
+			'business_profile_count': business_profiles.count(),
+			'offer_count': offers.count()
 		}
+
+		# data:
+		# Count the total number of reviews in the database
+		# Calculate the average rating, rounded to one decimal place
+		# Count the total number of business profiles
+		# Count the total number of offers
 
 		return Response(data)

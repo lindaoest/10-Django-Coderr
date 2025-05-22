@@ -32,9 +32,12 @@ class OfferDetailHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
 
 """ Serializer for reading offers, including related details and user info """
 class OfferReadSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True) # Display user as a primary key (read-only)
-    details = OfferDetailHyperlinkedSerializer(many=True, read_only=True) # Include related offer details as hyperlinks (read-only)
-    user_details = serializers.SerializerMethodField() # Add a computed field for user details
+    # Display user as a primary key (read-only)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    # Include related offer details as hyperlinks (read-only)
+    details = OfferDetailHyperlinkedSerializer(many=True, read_only=True)
+    # Add a computed field for user details
+    user_details = serializers.SerializerMethodField()
 
     # Return business profile information of the offer's creator
     def get_user_details(self, obj):
@@ -55,7 +58,8 @@ class OfferReadSerializer(serializers.ModelSerializer):
 
 """ Serializer used for creating and updating offers with nested offer details """
 class OfferCreateUpdateSerializer(serializers.ModelSerializer):
-    details = OfferDetailSerializer(many=True) # Include offer details as nested input
+    # Include offer details as nested input
+    details = OfferDetailSerializer(many=True)
 
     # Extract the minimum price from the first detail item
     def set_min_price(self, details):
@@ -123,7 +127,8 @@ class OrderReadSerializer(serializers.ModelSerializer):
 
 """ Serializer for creating orders (uses offer_detail_id to generate order fields) """
 class OrderCreateSerializer(serializers.ModelSerializer):
-    offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True) # Accept offer_detail_id as input to base the order on a specific OfferDetail
+    # Accept offer_detail_id as input to base the order on a specific OfferDetail
+    offer_detail_id = serializers.PrimaryKeyRelatedField(queryset=OfferDetail.objects.all(), write_only=True)
 
     class Meta:
         model = Order
@@ -172,8 +177,8 @@ class ReviewReadSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         extra_kwargs = {
-            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
-            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
         }
 
 """ Serializer for creating reviews """
@@ -186,8 +191,8 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
             'business_user': {'required': True},
             'rating': {'required': True},
             'description': {'required': True},
-            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
-            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
         }
 
     # Create review and assign reviewer automatically from the request context
@@ -203,6 +208,6 @@ class ReviewUpdateSerializer(serializers.ModelSerializer):
         fields = ['id', 'business_user', 'reviewer', 'rating', 'description', 'created_at', 'updated_at']
         read_only_fields = ['business_user', 'reviewer']
         extra_kwargs = {
-            'created_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
-            'updated_at': {'format': "%Y-%m-%dT%H:%M:%SZ"},
+            'created_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
+            'updated_at': {'format': "%Y-%m-%dT%H:%M:%S.%fZ"},
         }

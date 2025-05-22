@@ -4,11 +4,16 @@ from django.contrib.auth.models import User
 
 """ Serializer for user registration """
 class RegistrationSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=True) # Username is required
-    email = serializers.EmailField(required=True) # Email is required
-    password = serializers.CharField(write_only=True, required=True) # Password is write-only to avoid exposure in responses
-    repeated_password = serializers.CharField(write_only=True) # Repeat password to confirm correctness
-    type = serializers.CharField() # Profile type: 'customer' or 'business'
+    # Username is required
+    username = serializers.CharField(required=True)
+    # Email is required
+    email = serializers.EmailField(required=True)
+    # Password is write-only to avoid exposure in responses
+    password = serializers.CharField(write_only=True, required=True)
+    # Repeat password to confirm correctness
+    repeated_password = serializers.CharField(write_only=True)
+    # Profile type: 'customer' or 'business'
+    type = serializers.CharField()
 
     class Meta:
         model = User
@@ -32,7 +37,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
     # Create a new user and associated profile based on profile type
     def create(self, validated_data):
         user = User(username=validated_data['username'], email=validated_data['email'])
-        user.set_password(validated_data['password']) # Hash the password before saving
+        # Hash the password before saving
+        user.set_password(validated_data['password'])
         user.save()
 
         # Create related profile depending on the 'type' field

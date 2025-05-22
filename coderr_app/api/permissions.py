@@ -10,8 +10,8 @@ class OfferPermission(BasePermission):
         if request.method == 'POST':
             return request.user.is_authenticated and hasattr(request.user, 'businessProfile')
 
-        # For other methods, user must be authenticated and have business profile
-        return request.user.is_authenticated and hasattr(request.user, 'businessProfile')
+        # For other methods, user must be authenticated
+        return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
         # Safe methods require authentication

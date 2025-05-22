@@ -3,13 +3,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from .serializers import RegistrationSerializer, BusinessProfileSerializer, CustomerProfileSerializer
 from rest_framework import status
-from ..models import BusinessProfile, CustomerProfile
 from rest_framework.authtoken.views import ObtainAuthToken
-from .permissions import ProfilePermission
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from .serializers import RegistrationSerializer, BusinessProfileSerializer, CustomerProfileSerializer
+from ..models import BusinessProfile, CustomerProfile
+from .permissions import ProfilePermission
 
 """ View for user registration - anyone can access """
 class RegistrationView(APIView):
